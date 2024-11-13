@@ -1,0 +1,520 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Unidade {
+  KG
+  G
+  UNI
+  CX
+}
+
+enum Tipo_Instalacao {
+  ARMAZEM
+  RESTAURANTE
+}
+
+enum Tipo_Pagamento {
+  CASH
+  CCREDITO
+  CDEBITO
+  CHECK
+}
+
+enum Estado_Pedido {
+  EM_ESPERA
+  EM_PROCESSO
+  COMPLETO
+}
+
+model Artigo {
+  id                String              @id
+  codigo            String              @unique
+  titulo            String              @unique
+  id_marca          String?
+  id_subfamilia     String?
+  taxaIva           Decimal
+  codigoBarras      String?             @unique
+  unidade           Unidade
+  qtyTotal          Decimal             @default(0)
+  valorTotal        Decimal             @default(0)
+  descricao         String?
+  dataCriacao       DateTime            @default(now())
+  dataActualizacao  DateTime            @updatedAt()
+  Marca             Marca?              @relation(fields: [id_marca], references: [id])
+  SubFamilia        SubFamilia?         @relation(fields: [id_subfamilia], references: [id])
+  Stock             Stock[]
+  ItemTransferencia ItemTransferencia[]
+  ItemCompra        ItemCompra[]
+  Produto_Item      Produto_Item[]
+  ItemsContagem     ItemsContagem[]
+  SaidaStock        SaidaStock[]
+  EntradaStock      EntradaStock[]
+
+  @@index([id])
+  @@index([codigoBarras])
+}
+
+model Produto {
+  id               String           @id
+  id_categoria     String
+  codigo           String           @unique
+  titulo           String           @unique
+  imagem           String?
+  preco            Decimal
+  isCombo          Boolean
+  descricao        String?
+  qtyPorReceita    Decimal          @default(1)
+  precoCusto       Decimal
+  dataCriacao      DateTime         @default(now())
+  dataActualizacao DateTime         @updatedAt()
+  Produto_Item     Produto_Item[]
+  Composto         Combo[]          @relation(name: "composto")
+  Compoe           Combo[]          @relation(name: "compoe")
+  ItemPedido       ItemPedido[]
+  Categoria        Categoria        @relation(fields: [id_categoria], references: [id])
+  Produto_Producao Item_Producao[]
+  Stock_Producao   Stock_Producao[]
+  SaidaStock       SaidaStock[]
+
+  @@index([id, titulo])
+}
+
+model Combo {
+  id               String   @id
+  id_produto       String
+  id_item          String
+  quantidade       Decimal
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Produto          Produto  @relation(name: "composto", fields: [id_produto], references: [id], onDelete: Cascade)
+  Item             Produto  @relation(name: "compoe", fields: [id_item], references: [id])
+}
+
+model Produto_Item {
+  id               String   @id
+  id_produto       String
+  id_artigo        String
+  quantidade       Decimal
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Produto          Produto  @relation(fields: [id_produto], references: [id], onDelete: Cascade)
+  Artigo           Artigo   @relation(fields: [id_artigo], references: [id])
+
+  @@index([id_produto])
+}
+
+model Categoria {
+  id               String    @id
+  codigo           String    @unique
+  titulo           String    @unique
+  dataCriacao      DateTime  @default(now())
+  dataActualizacao DateTime  @updatedAt()
+  Produto          Produto[]
+}
+
+model Stock {
+  id               String     @id
+  id_artigo        String
+  id_instalacao    String
+  actual           Decimal    @default(0)
+  minimo           Decimal
+  maximo           Decimal
+  reposicao        Decimal
+  economico        Decimal
+  dataCriacao      DateTime   @default(now())
+  dataActualizacao DateTime   @updatedAt()
+  Artigo           Artigo     @relation(fields: [id_artigo], references: [id])
+  Instalacao       Instalacao @relation(fields: [id_instalacao], references: [id])
+
+  @@unique([id_instalacao, id_artigo])
+  @@index([id_artigo, id_instalacao])
+}
+
+model Contagem {
+  id               String          @id
+  dataContagem     DateTime        @unique
+  dataCriacao      DateTime        @default(now())
+  dataActualizacao DateTime        @updatedAt()
+  ItemsContagem    ItemsContagem[]
+
+  @@index([dataCriacao])
+}
+
+model ItemsContagem {
+  id               String   @id
+  id_contagem      String
+  id_artigo        String
+  qty_preparada    Decimal
+  qty_porPreparar  Decimal
+  Artigo           Artigo   @relation(fields: [id_artigo], references: [id])
+  Contagem         Contagem @relation(fields: [id_contagem], references: [id], onDelete: Cascade)
+  dataContagem     DateTime
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+
+  @@unique([id_contagem, id_artigo])
+}
+
+model Stock_Producao {
+  id               String     @id
+  id_produto       String
+  id_instalacao    String
+  actual           Decimal    @default(0)
+  dataCriacao      DateTime   @default(now())
+  dataActualizacao DateTime   @updatedAt()
+  Produto          Produto    @relation(fields: [id_produto], references: [id])
+  Instalacao       Instalacao @relation(fields: [id_instalacao], references: [id])
+
+  @@unique([id_instalacao, id_produto])
+  @@index([id_produto, id_instalacao])
+}
+
+model Producao {
+  id               String          @id
+  id_instalacao    String
+  dataCriacao      DateTime        @default(now())
+  dataActualizacao DateTime        @updatedAt()
+  Produto_Producao Item_Producao[]
+  Instalacao       Instalacao      @relation(fields: [id_instalacao], references: [id])
+
+  @@index([id_instalacao])
+}
+
+model Item_Producao {
+  id               String   @id
+  id_producao      String
+  id_produto       String
+  quantidade       Decimal
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Producao         Producao @relation(fields: [id_producao], references: [id], onDelete: Cascade)
+  Produto          Produto  @relation(fields: [id_produto], references: [id], onDelete: Cascade)
+}
+
+model Instalacao {
+  id                String              @id
+  id_localizacao    String              @unique
+  codigo            String              @unique
+  titulo            String
+  tipo              Tipo_Instalacao
+  descricao         String?
+  dataCriacao       DateTime            @default(now())
+  dataActualizacao  DateTime            @updatedAt()
+  principal         Boolean             @default(false)
+  Localizacao       Localizacao         @relation(fields: [id_localizacao], references: [id], onDelete: Cascade)
+  Stock             Stock[]
+  Caixa             Caixa[]
+  TransStockPartida TransfereciaStock[] @relation(name: "est_partida")
+  TransStockDestino TransfereciaStock[] @relation(name: "est_destino")
+  Compra            Compra[]
+  Mesa              Mesa[]
+  Producao          Producao[]
+  Stock_Producao    Stock_Producao[]
+  SaidaStock        SaidaStock[]
+  EntradaStock      EntradaStock[]
+
+  @@index([titulo, id])
+}
+
+//TODO: Verificar se é deletado
+model Localizacao {
+  id               String      @id
+  provincia        String
+  cidade           String
+  endereco         String
+  codigoPostal     String
+  dataCriacao      DateTime    @default(now())
+  dataActualizacao DateTime    @updatedAt()
+  Instalacao       Instalacao?
+}
+
+model TransfereciaStock {
+  id               String              @id
+  id_estPartida    String
+  id_estDestino    String
+  dataTrans        DateTime
+  dataCriacao      DateTime            @default(now())
+  dataActualizacao DateTime            @updatedAt()
+  Item             ItemTransferencia[]
+  Partida          Instalacao          @relation("est_partida", fields: [id_estPartida], references: [id])
+  Destino          Instalacao          @relation("est_destino", fields: [id_estDestino], references: [id])
+}
+
+model ItemTransferencia {
+  id                String            @id
+  id_artigo         String
+  id_transferecia   String
+  dataTrans         DateTime
+  quantidade        Decimal
+  dataCriacao       DateTime          @default(now())
+  dataActualizacao  DateTime          @updatedAt()
+  TransfereciaStock TransfereciaStock @relation(fields: [id_transferecia], references: [id])
+  Artigo            Artigo            @relation(fields: [id_artigo], references: [id])
+
+  @@index(id_artigo)
+  @@index(id_transferecia)
+}
+
+enum Estado_Caixa {
+  Aberto
+  Fechado
+}
+
+model Caixa {
+  id               String         @id
+  codigo           String         @unique
+  email_usuario    String         @unique
+  id_instalacao    String
+  is_open          Boolean        @default(false)
+  id_sessao        String?
+  dataCriacao      DateTime       @default(now())
+  dataActualizacao DateTime       @updatedAt()
+  Instalacao       Instalacao     @relation(fields: [id_instalacao], references: [id])
+  SessoesCaixa     SessoesCaixa[]
+  SaidaCaixa       SaidaCaixa[]
+  Pedido           Pedido[]
+  EntradaCaixa     EntradaCaixa[]
+
+  @@unique([email_usuario, id_instalacao])
+  @@index([id_instalacao, email_usuario])
+}
+
+model SessoesCaixa {
+  id                String             @id
+  id_caixa          String
+  data_abertura     DateTime
+  data_fechamento   DateTime?
+  Caixa             Caixa              @relation(fields: [id_caixa], references: [id])
+  Pedido            Pedido[]
+  EncerramentoCaixa EncerramentoCaixa?
+}
+
+model EncerramentoCaixa {
+  id          String       @id
+  id_sessao   String       @unique
+  Nota1000    Int
+  Nota500     Int
+  Nota200     Int
+  Nota100     Int
+  Nota50      Int
+  Nota20      Int
+  Moeda10     Int
+  Moeda5      Int
+  Moeda2      Int
+  Moeda1      Int
+  Moeda05     Int
+  Pos         Decimal
+  Sessao      SessoesCaixa @relation(fields: [id_sessao], references: [id])
+  dataCriacao DateTime     @default(now())
+}
+
+model EntradaCaixa {
+  id            String   @id
+  id_caixa      String
+  valor_entrada Decimal
+  data          DateTime
+  dataCriacao   DateTime @default(now())
+  Caixa         Caixa    @relation(fields: [id_caixa], references: [id])
+}
+
+model SaidaCaixa {
+  id          String   @id
+  id_caixa    String
+  valor_saida Decimal
+  data        DateTime
+  dataCriacao DateTime @default(now())
+  Caixa       Caixa    @relation(fields: [id_caixa], references: [id])
+}
+
+enum Tipo_Saida {
+  Oferta
+  Desperdicio
+}
+
+enum Tipo_Item {
+  Produto
+  Artigo
+}
+
+model SaidaStock {
+  id               String     @id
+  id_instalacao    String
+  id_produto       String?
+  id_artigo        String?
+  quantidade       Decimal
+  tipo_saida       Tipo_Saida
+  tipo_item        Tipo_Item
+  dataSaida        DateTime
+  dataCriacao      DateTime   @default(now())
+  dataActualizacao DateTime   @updatedAt()
+  Produto          Produto?   @relation(fields: [id_produto], references: [id])
+  Artigo           Artigo?    @relation(fields: [id_artigo], references: [id])
+  Instalacao       Instalacao @relation(fields: [id_instalacao], references: [id])
+}
+
+model EntradaStock {
+  id               String     @id
+  id_instalacao    String
+  id_artigo        String
+  quantidade       Decimal
+  dataEntrada      DateTime
+  dataCriacao      DateTime   @default(now())
+  dataActualizacao DateTime   @updatedAt()
+  Instalacao       Instalacao @relation(fields: [id_instalacao], references: [id])
+  Artigo           Artigo     @relation(fields: [id_artigo], references: [id])
+}
+
+model Pedido {
+  id               String        @id
+  codigo           String
+  id_cliente       String?
+  id_caixa         String
+  id_sessao        String
+  desconto         Decimal       @default(0)
+  bloqueado        Boolean       @default(false)
+  estado           Estado_Pedido @default(EM_ESPERA)
+  dataPedido       DateTime
+  dataCriacao      DateTime      @default(now())
+  dataActualizacao DateTime      @updatedAt()
+  Cliente          Cliente?      @relation(fields: [id_cliente], references: [id])
+  ItemPedido       ItemPedido[]
+  Caixa            Caixa         @relation(fields: [id_caixa], references: [id])
+  Sessao           SessoesCaixa  @relation(fields: [id_sessao], references: [id])
+  Pagamento        Pagamento?
+
+  @@unique([codigo, dataCriacao])
+}
+
+model Pagamento {
+  id               String         @id
+  id_pedido        String         @unique
+  tipoPagamento    Tipo_Pagamento
+  dataCriacao      DateTime       @default(now())
+  dataActualizacao DateTime       @updatedAt()
+  Pedido           Pedido         @relation(fields: [id_pedido], references: [id], onDelete: Cascade)
+}
+
+model ItemPedido {
+  id               String   @id
+  id_produto       String
+  id_pedido        String
+  quantidade       Decimal
+  titulo           String
+  preco            Decimal
+  confirmado       Boolean  @default(true)
+  desconto         Decimal  @default(0)
+  dataPedido       DateTime
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Produto          Produto  @relation(fields: [id_produto], references: [id])
+  Pedido           Pedido   @relation(fields: [id_pedido], references: [id], onDelete: Cascade)
+
+  @@index([id_produto, id_pedido])
+}
+
+model Mesa {
+  id               String     @id
+  codigo           String
+  id_instalacao    String
+  dataCriacao      DateTime   @default(now())
+  dataActualizacao DateTime   @updatedAt()
+  Instalacao       Instalacao @relation(fields: [id_instalacao], references: [id], onDelete: Cascade)
+}
+
+model Compra {
+  id               String       @id
+  id_fornecedor    String
+  id_instalacao    String
+  dataCompra       DateTime
+  dataCriacao      DateTime     @default(now())
+  dataActualizacao DateTime     @updatedAt()
+  Fornecedor       Fornecedor   @relation(fields: [id_fornecedor], references: [id])
+  Instalacao       Instalacao   @relation(fields: [id_instalacao], references: [id])
+  ItemCompra       ItemCompra[]
+}
+
+model ItemCompra {
+  id               String   @id
+  id_artigo        String
+  id_compra        String
+  dataCompra       DateTime
+  precoUnit        Decimal
+  quantidade       Decimal
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Artigo           Artigo   @relation(fields: [id_artigo], references: [id])
+  Compra           Compra   @relation(fields: [id_compra], references: [id], onDelete: Cascade)
+
+  @@index([id_artigo, id_compra])
+}
+
+model Marca {
+  id               String   @id
+  titulo           String   @unique
+  descricao        String?
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Artigo           Artigo[]
+
+  @@index([titulo])
+}
+
+model Cliente {
+  id               String   @id
+  nome             String
+  nuit             String   @unique
+  cell1            String?
+  cell2            String?
+  email            String?
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Pedido           Pedido[]
+
+  @@index([nome])
+}
+
+model Fornecedor {
+  id               String   @id
+  nome             String
+  nuit             String   @unique
+  cell1            String?
+  cell2            String?
+  email            String?
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Compra           Compra[]
+
+  @@index([nome])
+}
+
+model Familia {
+  id               String       @id
+  codigo           String       @unique
+  titulo           String
+  descricao        String?
+  dataCriacao      DateTime     @default(now())
+  dataActualizacao DateTime     @updatedAt()
+  SubFamilia       SubFamilia[]
+
+  @@index([titulo])
+}
+
+model SubFamilia {
+  id               String   @id
+  id_familia       String
+  codigo           String   @unique
+  titulo           String
+  descricao        String?
+  dataCriacao      DateTime @default(now())
+  dataActualizacao DateTime @updatedAt()
+  Familia          Familia  @relation(fields: [id_familia], references: [id], onDelete: Cascade)
+  Artigo           Artigo[]
+
+  @@index([id_familia, titulo])
+}

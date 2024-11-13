@@ -1,11 +1,46 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="description" content="Sistema de gestão de stock" />
+    <meta name="author" content="Vailla Technology" />
+    <meta name="keywords" content="Sistema pedidos" />
+    <link rel="alternate" href="" hreflang="pt" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:url" content="https://vainilla-pedidos.onrender.com" />
+    <meta property="og:title" content="Vainilla-Pedidos" />
+    <meta
+      property="og:image"
+      content="https://vainilla.biz/wp-content/uploads/2022/12/cropped-logo.png"
+    />
+    <meta property="og:description" content="Sistema de gestão de stock" />
+    <link
+      rel="icon"
+      href="https://img.icons8.com/external-smashingstocks-glyph-smashing-stocks/66/339AF0/external-vanilla-nature-and-ecology-smashingstocks-glyph-smashing-stocks.png"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>Vainilla-Pedidos</title>
+    <script type="text/javascript">
+      (function (l) {
+        if (l.search[1] === '/') {
+          var decoded = l.search
+            .slice(1)
+            .split('&')
+            .map(function (s) {
+              return s.replace(/~and~/g, '&');
+            })
+            .join('?');
+          window.history.replaceState(
+            null,
+            null,
+            l.pathname.slice(0, -1) + decoded + l.hash,
+          );
+        }
+      })(window.location);
+    </script>
   </head>
+
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

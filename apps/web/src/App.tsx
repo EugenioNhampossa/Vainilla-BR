@@ -1,43 +1,64 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
-//import apiClient from "./api-client";
+import { AdminLayout } from './Layout';
+import { ThemeProvider } from './ThemeProvider';
+import { NotificationsProvider } from '@mantine/notifications';
+import { ModalsProvider } from '@mantine/modals';
+import './index.css';
+import { Login } from './Pages/Login';
+import { ErrorBoundary } from 'react-error-boundary';
+import ErrorFallback from './Pages/Errors/ErrorFallback';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { MessageModal } from './Components/Modals/MessageModal';
+import { ColorScheme, ColorSchemeProvider, Loader } from '@mantine/core';
+import { useHotkeys, useLocalStorage } from '@mantine/hooks';
+import { useAuth0 } from '@auth0/auth0-react';
 
-function App() {
-  const [count, setCount] = useState(0);
+export default function App() {
+  const { isAuthenticated, isLoading } = useAuth0();
 
-  // const { data, isLoading } = apiClient.todos.getAll.useQuery(["todos"]);
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1,
+      },
+    },
+  });
+
+  const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
+    key: 'mantine-color-scheme',
+    defaultValue: 'light',
+    getInitialValueInEffect: true,
+  });
+
+  const toggleColorScheme = (value?: ColorScheme) =>
+    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+
+  useHotkeys([['mod+J', () => toggleColorScheme()]]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[100vh] items-center justify-center">
+        <Loader variant="dots" />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-      </div>
-      <div>Todo List:</div>
-      <div style={{ display: "flex", gap: "3px", justifyContent: "center" }}>
-        {/* {isLoading
-          ? "loading todos..."
-          : data?.body.map((todo) => (
-              <div key={todo.id} style={{ padding: "10px" }}>
-                <div>{todo.title}</div>
-                <div>{todo.description}</div>
-              </div>
-            ))} */}
-      </div>
-    </>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <ColorSchemeProvider
+        colorScheme={colorScheme}
+        toggleColorScheme={toggleColorScheme}
+      >
+        <ThemeProvider theme={{ colorScheme }}>
+          <QueryClientProvider client={queryClient}>
+            <ModalsProvider modals={{ message: MessageModal }}>
+              <NotificationsProvider>
+                {isAuthenticated ? <AdminLayout /> : <Login />}
+              </NotificationsProvider>
+            </ModalsProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </ColorSchemeProvider>
+    </ErrorBoundary>
   );
 }
-
-export default App;
