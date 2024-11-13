@@ -1,0 +1,17 @@
+{
+  "name": "nestjs-vite-monorepo-template",
+  "version": "0.0.0",
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "npm@10.4.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "node apps/api/dist/main"
+  }
+}

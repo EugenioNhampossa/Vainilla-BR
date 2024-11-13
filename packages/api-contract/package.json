@@ -1,0 +1,21 @@
+{
+  "name": "@repo/api-contract",
+  "type": "commonjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "@ts-rest/core": "^3.45.2",
+    "typescript": "latest"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "typescript": "latest"
+  }
+}
