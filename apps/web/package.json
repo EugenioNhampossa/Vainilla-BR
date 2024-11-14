@@ -9,7 +9,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/api-contract": "*",
     "@ag-media/react-pdf-table": "^1.0.1",
     "@auth0/auth0-react": "^2.2.4",
     "@emotion/react": "^11.10.5",

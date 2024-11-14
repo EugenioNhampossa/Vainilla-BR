@@ -13,9 +13,5 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "start": "node apps/api/dist/main"
-  },
-  "dependencies": {
-    "@nestjs/platform-express": "^10.4.7",
-    "@nestjs/serve-static": "^4.0.2"
   }
 }
